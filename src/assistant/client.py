@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from collections.abc import Generator, Iterator
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import anthropic
 
 from .config import config
+
+if TYPE_CHECKING:
+    from .tools.registry import ToolRegistry
 
 
 @dataclass
@@ -122,3 +126,86 @@ class AssistantClient:
 
         session.add_assistant(full_text)
         return full_text
+
+    # ------------------------------------------------------------------
+    # Agentic loop (tool use)
+    # ------------------------------------------------------------------
+
+    def run_with_tools(
+        self,
+        session: ConversationSession,
+        registry: "ToolRegistry",
+        on_tool_call: callable | None = None,
+    ) -> Generator[str, None, None]:
+        """
+        Agentic loop: keep calling the API until the model stops using tools.
+
+        Yields text chunks as they stream. Tool calls are executed silently
+        and their results fed back to the model automatically.
+
+        Args:
+            session:      ConversationSession with user message already appended.
+            registry:     ToolRegistry with available tools.
+            on_tool_call: Optional callback(tool_name, tool_input, result) for
+                          displaying tool activity in the UI.
+        """
+        system = session.system_prompt or "You are a helpful research assistant."
+
+        while True:
+            # Build the raw messages list from session history
+            messages = session.to_api_messages()
+
+            # Non-streaming call so we can inspect stop_reason and tool_use blocks
+            response = self._client.messages.create(
+                model=config.model,
+                max_tokens=config.max_tokens,
+                system=system,
+                tools=registry.definitions,
+                messages=messages,
+            )
+            session.usage.update(response.usage)
+
+            # Collect any text content and yield it
+            full_text = ""
+            for block in response.content:
+                if block.type == "text":
+                    full_text += block.text
+                    yield block.text
+
+            if response.stop_reason == "end_turn":
+                # Model is done — record assistant message and exit loop
+                if full_text:
+                    session.add_assistant(full_text)
+                break
+
+            if response.stop_reason == "tool_use":
+                # Append the assistant's full content (text + tool_use blocks) to history
+                session.history.append(
+                    Message(role="assistant", content=response.content)  # type: ignore[arg-type]
+                )
+
+                # Execute each tool and collect results
+                tool_results = []
+                for block in response.content:
+                    if block.type != "tool_use":
+                        continue
+
+                    result = registry.execute(block.name, block.input)
+
+                    if on_tool_call:
+                        on_tool_call(block.name, block.input, result)
+
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result,
+                    })
+
+                # Append tool results as a user message and loop again
+                session.history.append(
+                    Message(role="user", content=tool_results)  # type: ignore[arg-type]
+                )
+                continue
+
+            # Any other stop reason — bail out
+            break
