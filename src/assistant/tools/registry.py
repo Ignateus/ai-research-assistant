@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from . import calculator, datetime_tool, search
+from . import calculator, datetime_tool, document_search, search
 
 
 class ToolRegistry:
@@ -45,10 +45,20 @@ class ToolRegistry:
         return list(self._handlers.keys())
 
 
-def build_default_registry() -> ToolRegistry:
-    """Build and return the registry with all built-in tools registered."""
+def build_default_registry(pipeline=None) -> ToolRegistry:  # noqa: ANN001
+    """
+    Build and return the registry with all built-in tools registered.
+
+    Args:
+        pipeline: Optional RAGPipeline instance. When provided, the
+                  search_documents tool is activated.
+    """
+    if pipeline is not None:
+        document_search.set_pipeline(pipeline)
+
     registry = ToolRegistry()
     registry.register(calculator.TOOL_DEFINITION, calculator.calculate)
     registry.register(datetime_tool.TOOL_DEFINITION, datetime_tool.get_current_datetime)
     registry.register(search.TOOL_DEFINITION, search.web_search)
+    registry.register(document_search.TOOL_DEFINITION, document_search.search_documents)
     return registry
