@@ -1,0 +1,61 @@
+{
+  "name": "research_assistant_v1",
+  "questions": [
+    {
+      "id": "q001",
+      "question": "What is retrieval-augmented generation (RAG) and why is it useful?",
+      "reference_answer": "RAG is a technique that combines a retrieval step (fetching relevant documents from a knowledge base) with a generation step (an LLM producing an answer grounded in those documents). It is useful because it reduces hallucinations, allows the model to access up-to-date or private information without fine-tuning, and makes answers more verifiable.",
+      "context_hint": null,
+      "tags": ["rag", "concepts"]
+    },
+    {
+      "id": "q002",
+      "question": "What are the main differences between RAG and fine-tuning for customising an LLM?",
+      "reference_answer": "RAG retrieves external context at inference time and does not change model weights — it is cheaper, updatable, and better for factual recall. Fine-tuning updates model weights on a training set — it is better for teaching style, tone, or new reasoning patterns but is expensive, can cause forgetting, and cannot easily incorporate new facts after training.",
+      "context_hint": null,
+      "tags": ["rag", "fine-tuning", "concepts"]
+    },
+    {
+      "id": "q003",
+      "question": "What is 15% of 4,820?",
+      "reference_answer": "723.0",
+      "context_hint": null,
+      "tags": ["tool-use", "calculator"]
+    },
+    {
+      "id": "q004",
+      "question": "Explain the transformer attention mechanism in simple terms.",
+      "reference_answer": "Attention allows each token in a sequence to look at every other token and decide how much to 'attend' to it. It computes query, key, and value vectors for each token; the dot product of queries and keys gives attention scores, which are softmaxed into weights; these weights blend the value vectors to produce the output. This lets the model capture long-range dependencies efficiently.",
+      "context_hint": null,
+      "tags": ["concepts", "transformers"]
+    },
+    {
+      "id": "q005",
+      "question": "What are the key trade-offs when choosing a chunk size for a RAG pipeline?",
+      "reference_answer": "Smaller chunks give more precise retrieval but lose surrounding context and increase the number of chunks to store. Larger chunks preserve context but may retrieve irrelevant content and use more tokens per call. A common starting point is 256–512 tokens with 10–20% overlap. The optimal size depends on the document type, query style, and model context window.",
+      "context_hint": null,
+      "tags": ["rag", "chunking"]
+    },
+    {
+      "id": "q006",
+      "question": "What is prompt caching and how does it reduce API costs?",
+      "reference_answer": "Prompt caching stores a prefix of the prompt (e.g. a long system prompt or document context) on Anthropic's servers after the first request. Subsequent requests that reuse the same prefix are served the cached version at ~90% lower cost than re-processing those tokens. This is especially valuable for long, repeated system prompts or large document contexts.",
+      "context_hint": null,
+      "tags": ["caching", "cost"]
+    },
+    {
+      "id": "q007",
+      "question": "Describe the plan-execute-reflect agent loop pattern.",
+      "reference_answer": "The loop has three phases: (1) Plan — the agent decomposes a high-level goal into concrete steps; (2) Execute — each step is carried out, typically using tools to gather information; (3) Reflect — the agent evaluates whether the collected information is sufficient to answer the goal. If gaps remain, new steps are added and the loop continues. When sufficient, the agent synthesises a final answer or report.",
+      "context_hint": null,
+      "tags": ["agents", "concepts"]
+    },
+    {
+      "id": "q008",
+      "question": "What does LLM-as-a-judge mean and what are its limitations?",
+      "reference_answer": "LLM-as-a-judge uses a language model to score or compare other model outputs on quality dimensions like faithfulness, relevance, or conciseness. Its limitations include: positional bias (preferring the first option in comparisons), verbosity bias (favouring longer answers), self-enhancement bias (a model scoring its own outputs higher), and inconsistency across runs. Mitigation strategies include multiple-judge ensembles, swapping answer order, and calibration against human annotations.",
+      "context_hint": null,
+      "tags": ["eval", "concepts"]
+    }
+  ]
+}
